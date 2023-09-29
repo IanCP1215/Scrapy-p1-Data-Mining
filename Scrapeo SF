@@ -1,0 +1,29 @@
+import scrapy
+from scrapy.spiders import CrawlSpider, Rule
+from scrapy.linkextractors import LinkExtractor
+from scrapy.exceptions import CloseSpider
+from tutorial.items import TutorialItem
+
+class TutorialSpider(CrawlSpider):
+    name='tutorial'
+    item_count=0
+    allowed_domain=['https://www.falabella.com.pe/falabella-pe']
+    start_url=['https://tienda.falabella.com.pe/falabella-pe/category/cat7230497/Accesorios?facetSelected=true&f.derived.variant.sellerId=FALABELLA']
+    rules={
+        Rule(LinkExtractor(allow=(), restrict_xpaths=('//i[@class="jsx-1794558402 jsx-1490357007 csicon-arrow_right arrow_right-mkp"]'))),
+        Rule(LinkExtractor(allow=(), restrict_xpaths=('//b[@class="jsx-1397545394 copy5 primary jsx-2490421794 normal pod-subTitle subTitle-rebrand"]')),
+            callback='parse_item', follow=False)
+    }
+
+def parse_item(self, response):
+    ml_item = TutorialSpider()
+    ml_item['titulo'] = response.xpath('normalize-space(//*[@id="product-b2c-ui"]/div[1]/div[2]/div[2]/section[2]/div[1]/div[2]/h1)').extract()
+    ml_item['codigo'] = response.xpath('normalize-space(//*[@id="product-b2c-ui"]/div[1]/div[2]/div[2]/section[2]/div[1]/div[1]/div[2]/div[1]/span)').extract()
+    ml_item['color'] = response.xpath('normalize-space(//*[@id="product-b2c-ui"]/div[1]/div[2]/div[2]/section[2]/div[2]/div/div[1]/div[2]/span[2])').extract()
+    ml_item['talla'] = response.xpath('normalize-space(//*[@id="testId-sizeButton-TALLA ÚNICA"])').extract()
+    ml_item['precio'] = response.xpath('normalize-space(//*[@id="testId-pod-prices-19813669"]/ol/li[1]/div/span)').extract()
+
+    self.item_count+=1
+    if self.item_count > 5:
+        raise CloseSpider('item_exceeded')
+    yield ml_item
